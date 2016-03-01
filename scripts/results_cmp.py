@@ -6,8 +6,6 @@ from functools import *
 # We will compare to input file to all JSON files with the same signature inside the search path
 Default_Search_Path = "../gunrock-output/"
 Signatures = ["algorithm", "alpha", "beta", "dataset", "idempotent", "source_vertex", "mark_predecessors", "undirected", "quick_mode"]
-# All JSON files will be loaded in this buffer
-JSON_buffer = {}
 
 # for colored output
 BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
@@ -31,34 +29,36 @@ def Colored(text, color=WHITE):
 	else:
 		return str(text)
 
-# Filter JSON by key/value
-def JSONFilter(json_file, keywords):
-	for k, v in keywords.iteritems():
-		if JSON_buffer[json_file].get(k) != v:
-			return False
-	return True
-
-# Extract key/value from JSON
-def JSONExtractor(json_file, key):
-	ret = {}
-	for k in key:
-		ret[k] = JSON_buffer[json_file].get(k)
-	return ret
-
-# Find the paths of all JSON files in search path
-def GatherAllJSON(search_path):
-	matches = []
-	for root, dirnames, filenames in os.walk(search_path):
-		for filename in fnmatch.filter(filenames, "*.json"):
-			matches.append(os.path.abspath(os.path.join(root, filename)))
-	print "Found {} JSON files in search path {}".format(len(matches), search_path)
-	return matches
-
-# Parse All JSON files and load them into a dictionary, filename as the key
-def LoadAllJSON(filelist):
-	for j in filelist:
-		with open(j) as f:
-			JSON_buffer[j] = json.load(f)
+class JSONProc(object):
+	def __init__(self):
+		# All JSON files will be loaded in this buffer
+		self.JSON_buffer = {}	
+	# Filter JSON by key/value
+	def Filter(self, json_file, keywords):
+		for k, v in keywords.iteritems():
+			if self.JSON_buffer[json_file].get(k) != v:
+				return False
+		return True
+	# Extract key/value from JSON
+	def Extractor(self, json_file, key):
+		ret = {}
+		for k in key:
+			ret[k] = self.JSON_buffer[json_file].get(k)
+		return ret
+	# Find the paths of all JSON files in search path
+	@staticmethod
+	def GatherAll(search_path):
+		matches = []
+		for root, dirnames, filenames in os.walk(search_path):
+			for filename in fnmatch.filter(filenames, "*.json"):
+				matches.append(os.path.abspath(os.path.join(root, filename)))
+		print "Found {} JSON files in search path {}".format(len(matches), search_path)
+		return matches
+	# Parse All JSON files and load them into a dictionary, filename as the key
+	def LoadAll(self, filelist):
+		for j in filelist:
+			with open(j) as f:
+				self.JSON_buffer[j] = json.load(f)
 	
 # Generate outputs
 def PrintResults(sig_dedup, results):
@@ -93,7 +93,7 @@ def PrintResults(sig_dedup, results):
 
 # Preparing JSON files
 input_file = []
-all_files = GatherAllJSON(Default_Search_Path)
+all_files = JSONProc.GatherAll(Default_Search_Path)
 if len(sys.argv) >= 2:
 	input_file = set(map(os.path.abspath, sys.argv[1:]))
 else:
@@ -101,20 +101,21 @@ else:
 	input_file = all_files
 all_files.extend(input_file)
 all_files = set(all_files)
-LoadAllJSON(all_files)
+J = JSONProc()
+J.LoadAll(all_files) 
 
 # Gunrock outputs only
-input_file = filter(partial(JSONFilter, keywords = {"engine" : "Gunrock"}), input_file)
-all_files = filter(partial(JSONFilter, keywords = {"engine" : "Gunrock"}), all_files)
+input_file = filter(partial(J.Filter, keywords = {"engine" : "Gunrock"}), input_file)
+all_files = filter(partial(J.Filter, keywords = {"engine" : "Gunrock"}), all_files)
 # Extract "signatures" from input files
-sig = map(partial(JSONExtractor, key = Signatures), input_file)
+sig = map(partial(J.Extractor, key = Signatures), input_file)
 # Remove duplicated signatures
 sig_dedup = []
 [sig_dedup.append(i) for i in sig if not i in sig_dedup]
 # Collect all JSONs with each signature
-collections = map(lambda s: filter(partial(JSONFilter, keywords = s), all_files), sig_dedup)
+collections = map(lambda s: filter(partial(J.Filter, keywords = s), all_files), sig_dedup)
 # Extract results for each signature
-results = map(lambda c: map(partial(JSONExtractor, key = ["elapsed", "time", "m_teps"]), c), collections)
+results = map(lambda c: map(partial(J.Extractor, key = ["elapsed", "time", "m_teps"]), c), collections)
 # Sort result by ctime
 results = map(lambda r: sorted(r, key=lambda k: time.strptime(k["time"].replace("\n", ""))), results)
 
