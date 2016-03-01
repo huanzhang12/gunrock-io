@@ -9,25 +9,28 @@ Signatures = ["algorithm", "alpha", "beta", "dataset", "idempotent", "source_ver
 
 # for colored output
 BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
-#following from Python cookbook, #475186
-def has_colors(stream):
-    if not hasattr(stream, "isatty"):
-        return False
-    if not stream.isatty():
-        return False # auto color only on TTYs
-    try:
-        import curses
-        curses.setupterm()
-        return curses.tigetnum("colors") > 2
-    except:
-        # guess false in case of error
-        return False
-Term_Has_Colors = has_colors(sys.stdout)
-def Colored(text, color=WHITE):
-	if  Term_Has_Colors:
-		return "\x1b[1;%dm" % (30+color) + str(text) + "\x1b[0m"
-	else:
-		return str(text)
+class TermColor(object):
+	def __init__(self):
+		self.enable_color = self.has_colors(sys.stdout)
+	#following from Python cookbook, #475186
+	@staticmethod
+	def has_colors(stream):
+	    if not hasattr(stream, "isatty"):
+		return False
+	    if not stream.isatty():
+		return False # auto color only on TTYs
+	    try:
+		import curses
+		curses.setupterm()
+		return curses.tigetnum("colors") > 2
+	    except:
+		# guess false in case of error
+		return False
+	def Colored(self, text, color=WHITE):
+		if  self.enable_color:
+			return "\x1b[1;%dm" % (30+color) + str(text) + "\x1b[0m"
+		else:
+			return str(text)
 
 class JSONProc(object):
 	def __init__(self):
@@ -103,6 +106,7 @@ all_files.extend(input_file)
 all_files = set(all_files)
 J = JSONProc()
 J.LoadAll(all_files) 
+Colored = TermColor().Colored
 
 # Gunrock outputs only
 input_file = filter(partial(J.Filter, keywords = {"engine" : "Gunrock"}), input_file)
