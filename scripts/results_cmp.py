@@ -16,20 +16,16 @@ def Colored(text, color=WHITE):
 
 # Filter JSON by key/value
 def JSONFilter(json_file, keywords):
-	with open(json_file) as f:
-		data = json.load(f)
-		for k, v in keywords.iteritems():
-			if data.get(k) != v:
-				return False
+	for k, v in keywords.iteritems():
+		if JSON_buffer[json_file].get(k) != v:
+			return False
 	return True
 
 # Extract key/value from JSON
 def JSONExtractor(json_file, key):
 	ret = {}
-	with open(json_file) as f:
-		data = json.load(f)
-		for k in key:
-			ret[k] = data.get(k)
+	for k in key:
+		ret[k] = JSON_buffer[json_file].get(k)
 	return ret
 
 # Find the paths of all JSON files in search path
@@ -40,6 +36,12 @@ def GatherAllJSON(search_path):
 			matches.append(os.path.abspath(os.path.join(root, filename)))
 	return matches
 
+# Parse All JSON files and load them into a dictionary, filename as the key
+def LoadAllJSON(filelist):
+	for j in filelist:
+		with open(j) as f:
+			JSON_buffer[j] = json.load(f)
+	
 # Generate outputs
 def PrintResults(sig_dedup, results):
 	for i in range(0, len(sig_dedup)):
@@ -63,7 +65,7 @@ def PrintResults(sig_dedup, results):
 					res_string += "{}={} ".format(k, v)
 			print res_string
 
-# Preparing filenames
+# Preparing JSON files
 input_file = []
 all_files = GatherAllJSON(Default_Search_Path)
 if len(sys.argv) >= 2:
@@ -73,6 +75,7 @@ else:
 	sys.exit(0)
 all_files.extend(input_file)
 all_files = set(all_files)
+LoadAllJSON(all_files)
 
 # Gunrock outputs only
 input_file = filter(partial(JSONFilter, keywords = {"engine" : "Gunrock"}), input_file)
