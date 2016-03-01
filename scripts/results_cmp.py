@@ -5,7 +5,7 @@ from functools import *
 
 # We will compare to input file to all JSON files with the same signature inside the search path
 Default_Search_Path = "../gunrock-output/"
-Signatures = ["algorithm", "alpha", "beta", "dataset", "idempotent", "src", "mark_predecessors", "undirected", "quick_mode"]
+Signatures = ["algorithm", "alpha", "beta", "dataset", "idempotent", "source_vertex", "mark_predecessors", "undirected", "quick_mode"]
 # All JSON files will be loaded in this buffer
 JSON_buffer = {}
 
