@@ -3,8 +3,17 @@
 import os, sys, json, glob, math, time, fnmatch
 from functools import *
 
+# Script to compare Gunrock JSON results
+# Usage: 
+# Compare all JSON files in ../gunrock-output folder: ./results_cmp.py 
+# Compare certain JSONs against all previous results: ./results_cmp.py [JSON file 1] [JSON file 2] ...
+# This script will look for previous run results located at "../gunrock-output/" folder
+# which is specified by the Default_Search_Path variable below
+# Output is sorted by time, and performance improvements will be in green, regressions in red
+
 # We will compare to input file to all JSON files with the same signature inside the search path
 Default_Search_Path = "../gunrock-output/"
+# Two JSON files with the same signature (parameters) will be compared
 Signatures = ["algorithm", "alpha", "beta", "dataset", "idempotent", "source_vertex", "mark_predecessors", "undirected", "quick_mode"]
 
 # for colored output
