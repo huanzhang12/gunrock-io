@@ -13,8 +13,8 @@ from functools import *
 
 # We will compare to input file to all JSON files with the same signature inside the search path
 Default_Search_Path = "../gunrock-output/"
-# Two JSON files with the same signature (parameters) will be compared
-Signatures = ["algorithm", "alpha", "beta", "dataset", "idempotent", "source_vertex", "mark_predecessors", "undirected", "quick_mode"]
+# Two JSON files with the same signature (parameters) will be compared. You may want to add more here.
+Signatures = ["algorithm", "alpha", "beta", "dataset", "idempotent", "source_vertex", "mark_predecessors", "undirected", "quick_mode", "num_gpus", "rmat_scale", "rmat_edgefactor"]
 
 # for colored output
 BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
@@ -80,7 +80,8 @@ def PrintResults(sig_dedup, results):
 			continue
 		sig_string = ""
 		for k, v in sig_dedup[i].iteritems():
-			sig_string += "{}={} ".format(k, Colored(str(v), CYAN))
+			if v:
+				sig_string += "{}={} ".format(k, Colored(str(v), CYAN))
 		print Colored("Parameters:", CYAN) + " {}".format(sig_string)
 		last_elapsed = float('inf')
 		percent = 0.0
@@ -89,7 +90,10 @@ def PrintResults(sig_dedup, results):
 			for k, v in r.iteritems():
 				if k == "elapsed":
 					if not math.isinf(last_elapsed):
-						percent = 100 * (float(v) - last_elapsed) / last_elapsed
+						if last_elapsed == 0.0:
+							percent = 0.0
+						else:
+							percent = 100 * (float(v) - last_elapsed) / last_elapsed
 					if percent > 2.0:
 						res_string += "{}={}".format(k, Colored(v, RED))
 						res_string += " ({:+2.2f}%)\t".format(percent)
